@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-
+import javax.persistence.EntityNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 //injecao de dependencia automatizada - objeto da camada de servico 
 //vai acessar o repositorio e chamar no banco de dado as categorias
@@ -17,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dscatalog.dscatalog.dto.CategoryDTO;
 import com.dscatalog.dscatalog.entities.Category;
 import com.dscatalog.dscatalog.repositories.CategoryRepository;
-import com.dscatalog.dscatalog.services.exceptions.EntityNotFoundException;
+import com.dscatalog.dscatalog.services.exceptions.DataBaseException;
+import com.dscatalog.dscatalog.services.exceptions.ResourceNotFoundException;
 
 @Service
 public class CategoryService {
@@ -48,7 +51,7 @@ public class CategoryService {
 	@Transactional(readOnly = true)
 	public CategoryDTO findById(Long id) {	
 		Optional<Category> obj = repository.findById(id);
-		Category entity = obj.orElseThrow(() -> new EntityNotFoundException("Entity not found"));	
+		Category entity = obj.orElseThrow(() -> new ResourceNotFoundException("Entity not found"));	
 		return new CategoryDTO(entity);
 	}
 
@@ -58,6 +61,28 @@ public class CategoryService {
 		entity.setName(dto.getName());
 		entity = repository.save(entity);
 		return new CategoryDTO(entity);
+	}
+
+	@Transactional
+	public CategoryDTO update(Long id, CategoryDTO dto) {
+		try {
+		Category entity = repository.getById(id);
+		entity.setName(dto.getName());
+		entity = repository.save(entity);
+		return new CategoryDTO(entity);
+		} catch (EntityNotFoundException e) {
+			throw new ResourceNotFoundException("id not found" + id);
+		} 
+	}
+
+	public void delete(Long id) {
+		try {
+			repository.deleteById(id);
+		} catch (EmptyResultDataAccessException e) {
+			throw new ResourceNotFoundException("Id not found" + id);
+		} catch (DataIntegrityViolationException e) {
+			throw new DataBaseException("Violacao de integridade");
+		}
 	}
 
 }
