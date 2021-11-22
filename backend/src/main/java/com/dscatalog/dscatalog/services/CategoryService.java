@@ -9,6 +9,8 @@ import javax.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 //injecao de dependencia automatizada - objeto da camada de servico 
 //vai acessar o repositorio e chamar no banco de dado as categorias
@@ -83,6 +85,12 @@ public class CategoryService {
 		} catch (DataIntegrityViolationException e) {
 			throw new DataBaseException("Violacao de integridade");
 		}
+	}
+
+	public Page<CategoryDTO> findAllPaged(PageRequest pageRequest) {
+		Page<Category> list = repository.findAll(pageRequest);
+		Page<CategoryDTO> pageDto = list.map(x -> new CategoryDTO(x));
+		return pageDto;
 	}
 
 }
